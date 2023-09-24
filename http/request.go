@@ -9,6 +9,10 @@ import (
 	"os"
 )
 
+type session interface {
+	Send(*Request) (*Response, error)
+}
+
 type Request struct {
 	Method  method.Method
 	Path    string
@@ -73,7 +77,11 @@ func (r *Request) Error() error {
 	return r.err
 }
 
-func (r *Request) WithClear() *Request {
+func (r *Request) Send(session session) (*Response, error) {
+	return session.Send(r)
+}
+
+func (r *Request) Clear() *Request {
 	r.Method = method.Unknown
 	r.Path = ""
 	r.Proto = protocol.Auto

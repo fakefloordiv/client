@@ -24,7 +24,7 @@ func compareResponse(t *testing.T, want, got *http.Response) {
 }
 
 func TestResponseParser(t *testing.T) {
-	resp := http.NewResponse()
+	resp := http.NewResponse(nil)
 	parser := NewParser(
 		resp, *buffer.NewBuffer[byte](0, 4096), *buffer.NewBuffer[byte](0, 4096),
 	)
