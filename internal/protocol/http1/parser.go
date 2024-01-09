@@ -3,9 +3,9 @@ package http1
 import (
 	"bytes"
 	"github.com/indigo-web/client/http"
-	"github.com/indigo-web/client/http/protocol"
+	"github.com/indigo-web/client/http/proto"
 	"github.com/indigo-web/client/http/status"
-	"github.com/indigo-web/client/internal/parser"
+	"github.com/indigo-web/client/internal/protocol"
 	"github.com/indigo-web/utils/buffer"
 	"github.com/indigo-web/utils/strcomp"
 	"github.com/indigo-web/utils/uf"
@@ -13,18 +13,18 @@ import (
 	"strings"
 )
 
-var _ parser.Parser = &Parser{}
+var _ protocol.Parser = &Parser{}
 
 type Parser struct {
 	state        parserState
 	response     *http.Response
-	respLineBuff buffer.Buffer[byte]
-	headersBuff  buffer.Buffer[byte]
+	respLineBuff buffer.Buffer
+	headersBuff  buffer.Buffer
 	encToksBuff  []string
 	headerKey    string
 }
 
-func NewParser(resp *http.Response, respLineBuff, headersBuff buffer.Buffer[byte]) *Parser {
+func NewParser(resp *http.Response, respLineBuff, headersBuff buffer.Buffer) *Parser {
 	return &Parser{
 		state:        eProto,
 		response:     resp,
@@ -57,21 +57,21 @@ proto:
 	{
 		sp := bytes.IndexByte(data, ' ')
 		if sp == -1 {
-			if !p.respLineBuff.Append(data...) {
+			if !p.respLineBuff.Append(data) {
 				return false, nil, status.ErrTooLongResponseLine
 			}
 
 			return false, nil, nil
 		}
 
-		// TODO: if we received the whole protocol all-at-once, we can avoid copying
+		// TODO: if we received the whole proto all-at-once, we can avoid copying
 		//  the data into the buffer and win a bit more of performance
-		if !p.respLineBuff.Append(data[:sp]...) {
+		if !p.respLineBuff.Append(data[:sp]) {
 			return false, nil, status.ErrTooLongResponseLine
 		}
 
-		p.response.Proto = protocol.FromBytes(p.respLineBuff.Finish())
-		if p.response.Proto == protocol.Unknown {
+		p.response.Proto = proto.FromBytes(p.respLineBuff.Finish())
+		if p.response.Proto == proto.Unknown {
 			return false, nil, status.ErrHTTPVersionNotSupported
 		}
 
@@ -104,14 +104,14 @@ status:
 	{
 		lf := bytes.IndexByte(data, '\n')
 		if lf == -1 {
-			if !p.respLineBuff.Append(data...) {
+			if !p.respLineBuff.Append(data) {
 				return false, nil, status.ErrTooLongResponseLine
 			}
 
 			return false, nil, nil
 		}
 
-		if !p.respLineBuff.Append(data[:lf]...) {
+		if !p.respLineBuff.Append(data[:lf]) {
 			return false, nil, status.ErrTooLongResponseLine
 		}
 
@@ -132,20 +132,22 @@ headerKey:
 		p.state = eHeaderKeyCR
 		goto headerKeyCR
 	case '\n':
+		p.reset()
+
 		return true, data[1:], nil
 	}
 
 	{
 		semicolon := bytes.IndexByte(data, ':')
 		if semicolon == -1 {
-			if !p.headersBuff.Append(data...) {
+			if !p.headersBuff.Append(data) {
 				return false, nil, status.ErrHeaderKeyTooLarge
 			}
 
 			return false, nil, nil
 		}
 
-		if !p.headersBuff.Append(data[:semicolon]...) {
+		if !p.headersBuff.Append(data[:semicolon]) {
 			return false, nil, status.ErrHeaderKeyTooLarge
 		}
 
@@ -159,6 +161,8 @@ headerKeyCR:
 	if data[0] != '\n' {
 		return true, nil, status.ErrBadRequest
 	}
+
+	p.reset()
 
 	return true, data[1:], nil
 
@@ -177,14 +181,14 @@ headerValue:
 	{
 		lf := bytes.IndexByte(data, '\n')
 		if lf == -1 {
-			if !p.headersBuff.Append(data...) {
+			if !p.headersBuff.Append(data) {
 				return false, nil, status.ErrHeaderValueTooLarge
 			}
 
 			return false, nil, nil
 		}
 
-		if !p.headersBuff.Append(data[:lf]...) {
+		if !p.headersBuff.Append(data[:lf]) {
 			return false, nil, status.ErrHeaderValueTooLarge
 		}
 
@@ -221,7 +225,7 @@ headerValue:
 	}
 }
 
-func (p *Parser) Release() {
+func (p *Parser) reset() {
 	p.state = eProto
 	p.respLineBuff.Clear()
 	p.headersBuff.Clear()

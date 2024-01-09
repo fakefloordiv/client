@@ -3,7 +3,7 @@ package http1
 import (
 	"github.com/indigo-web/client/http"
 	"github.com/indigo-web/client/http/headers"
-	"github.com/indigo-web/client/http/protocol"
+	"github.com/indigo-web/client/http/proto"
 	"github.com/indigo-web/client/http/status"
 	"github.com/indigo-web/utils/buffer"
 	"github.com/stretchr/testify/require"
@@ -26,11 +26,10 @@ func compareResponse(t *testing.T, want, got *http.Response) {
 func TestResponseParser(t *testing.T) {
 	resp := http.NewResponse(nil)
 	parser := NewParser(
-		resp, *buffer.NewBuffer[byte](0, 4096), *buffer.NewBuffer[byte](0, 4096),
+		resp, *buffer.New(0, 4096), *buffer.New(0, 4096),
 	)
 
 	t.Run("simple response", func(t *testing.T) {
-		defer parser.Release()
 		defer resp.Clear()
 
 		data := "HTTP/1.1 200 OK\r\n\r\n"
@@ -39,7 +38,7 @@ func TestResponseParser(t *testing.T) {
 		require.True(t, headersCompleted)
 		require.Empty(t, rest)
 		compareResponse(t, &http.Response{
-			Proto:   protocol.HTTP11,
+			Proto:   proto.HTTP11,
 			Code:    status.OK,
 			Status:  "OK",
 			Headers: headers.NewHeaders(),
@@ -47,7 +46,6 @@ func TestResponseParser(t *testing.T) {
 	})
 
 	t.Run("response with headers", func(t *testing.T) {
-		defer parser.Release()
 		defer resp.Clear()
 
 		data := "HTTP/1.1 200 OK\r\nHello: world\r\nhello: nether\r\n\r\n"
@@ -56,7 +54,7 @@ func TestResponseParser(t *testing.T) {
 		require.True(t, headersCompleted)
 		require.Empty(t, rest)
 		compareResponse(t, &http.Response{
-			Proto:  protocol.HTTP11,
+			Proto:  proto.HTTP11,
 			Code:   status.OK,
 			Status: "OK",
 			Headers: headers.FromMap(map[string][]string{
