@@ -46,7 +46,9 @@ func (r *Request) WithProtocol(proto proto.Protocol) *Request {
 }
 
 func (r *Request) WithHeader(key string, values ...string) *Request {
-	r.Headers.Add(key, values...)
+	for _, value := range values {
+		r.Headers.Add(key, value)
+	}
 	return r
 }
 
