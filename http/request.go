@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/indigo-web/client/http/headers"
 	"github.com/indigo-web/client/http/method"
-	"github.com/indigo-web/client/http/protocol"
+	"github.com/indigo-web/client/http/proto"
 	"github.com/indigo-web/utils/uf"
 	"io"
 	"os"
@@ -16,16 +16,16 @@ type session interface {
 type Request struct {
 	Method  method.Method
 	Path    string
-	Proto   protocol.Protocol
-	Headers *headers.Headers
+	Proto   proto.Protocol
+	Headers headers.Headers
 	File    *os.File
 	Body    []byte
 	err     error
 }
 
-func NewRequest(hdrs *headers.Headers) *Request {
+func NewRequest(hdrs headers.Headers) *Request {
 	return &Request{
-		Proto:   protocol.Auto,
+		Proto:   proto.Auto,
 		Headers: hdrs,
 	}
 }
@@ -40,7 +40,7 @@ func (r *Request) WithPath(path string) *Request {
 	return r
 }
 
-func (r *Request) WithProtocol(proto protocol.Protocol) *Request {
+func (r *Request) WithProtocol(proto proto.Protocol) *Request {
 	r.Proto = proto
 	return r
 }
@@ -84,7 +84,7 @@ func (r *Request) Send(session session) (*Response, error) {
 func (r *Request) Clear() *Request {
 	r.Method = method.Unknown
 	r.Path = ""
-	r.Proto = protocol.Auto
+	r.Proto = proto.Auto
 	r.Headers.Clear()
 	r.File = nil
 	r.Body = nil
