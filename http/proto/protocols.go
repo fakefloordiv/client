@@ -1,4 +1,4 @@
-package protocol
+package proto
 
 import (
 	"github.com/indigo-web/utils/strcomp"
@@ -13,7 +13,7 @@ const (
 	HTTP10  Protocol = "HTTP/1.0"
 	HTTP11  Protocol = "HTTP/1.1"
 
-	// Auto is the newest available protocol
+	// Auto is the newest available proto
 	Auto
 )
 

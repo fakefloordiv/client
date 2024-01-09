@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/indigo-web/client/http/headers"
-	"github.com/indigo-web/client/http/protocol"
+	"github.com/indigo-web/client/http/proto"
 	"github.com/indigo-web/client/http/status"
 )
 
@@ -11,20 +11,20 @@ import (
 const headersPreAlloc = 7
 
 type Response struct {
-	Proto         protocol.Protocol
+	Proto         proto.Protocol
 	Code          status.Code
 	Status        status.Status
-	Headers       *headers.Headers
+	Headers       headers.Headers
 	ContentLength int
 	ContentType   string
 	Encoding      Encoding
-	Body          *Body
+	Body          Body
 }
 
-func NewResponse(bodyReader BodyReader) *Response {
+func NewResponse(body Body) *Response {
 	return &Response{
-		Headers: headers.NewPreallocHeaders(headersPreAlloc),
-		Body:    NewBody(bodyReader),
+		Headers: headers.NewPreAlloc(headersPreAlloc),
+		Body:    body,
 	}
 }
 

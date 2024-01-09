@@ -5,9 +5,8 @@ import (
 	"github.com/indigo-web/client/http"
 	"github.com/indigo-web/client/http/headers"
 	"github.com/indigo-web/client/http/method"
-	"github.com/indigo-web/client/internal/parser"
-	"github.com/indigo-web/client/internal/parser/http1"
-	"github.com/indigo-web/client/internal/render"
+	"github.com/indigo-web/client/internal/protocol"
+	http1 "github.com/indigo-web/client/internal/protocol/http1"
 	"github.com/indigo-web/client/internal/tcp"
 	"github.com/indigo-web/utils/buffer"
 	"net"
@@ -28,8 +27,7 @@ const (
 
 type Session struct {
 	client   tcp.Client
-	parser   parser.Parser
-	renderer render.Renderer
+	protocol protocol.Protocol
 	request  *http.Request
 	response *http.Response
 }
@@ -40,19 +38,18 @@ func NewSession(host string) (*Session, error) {
 		return nil, err
 	}
 
-	respLineBuff := buffer.NewBuffer[byte](respLineBuffInitial, respLineBuffMax)
-	headersBuff := buffer.NewBuffer[byte](headersBuffInitial, headersBuffMax)
+	respLineBuff := buffer.New(respLineBuffInitial, respLineBuffMax)
+	headersBuff := buffer.New(headersBuffInitial, headersBuffMax)
 	buff := make([]byte, tcpBuffSize)
 	client := tcp.NewClient(conn, readTimeout, writeTimeout, buff)
-	bodyReader := http1.NewBody(client, chunkedbody.NewParser(chunkedbody.DefaultSettings()))
-	resp := http.NewResponse(bodyReader)
-	renderBuff := make([]byte, 0, renderBuffDefault)
+	body := http1.NewBody(client, chunkedbody.NewParser(chunkedbody.DefaultSettings()))
+	resp := http.NewResponse(body)
+	serializerBuff := make([]byte, 0, renderBuffDefault)
 
 	return &Session{
 		client:   client,
-		parser:   http1.NewParser(resp, *respLineBuff, *headersBuff),
-		renderer: render.NewRenderer(client, renderBuff),
-		request:  http.NewRequest(headers.NewPreallocHeaders(preAllocHeaders)),
+		protocol: http1.New(resp, *respLineBuff, *headersBuff, client, serializerBuff),
+		request:  http.NewRequest(headers.NewPreAlloc(preAllocHeaders)),
 		response: resp,
 	}, nil
 }
@@ -62,7 +59,7 @@ func (s *Session) Send(request *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	if err := s.renderer.Send(request); err != nil {
+	if err := s.protocol.Send(request); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +69,7 @@ func (s *Session) Send(request *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 
-		headersCompleted, rest, err := s.parser.Parse(data)
+		headersCompleted, rest, err := s.protocol.Parse(data)
 		if err != nil {
 			// TODO: we should be more error-tolerant. Keep reading till the end (if the error isn't too hard)
 			return nil, err
