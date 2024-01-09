@@ -11,6 +11,8 @@ github.com/indigo-web/utils v0.3.0 h1:p40rS4xAsXMv9kDVeLW/IZw43R8hxrePqqD5KVbdYC
 github.com/indigo-web/utils v0.3.0/go.mod h1:fBdCfyNyprkgC0FvqaLE1B43CZgByQyhjDRxz4pNt8U=
 github.com/indigo-web/utils v0.4.0 h1:wpx4iQSP3ao9XCTeEIJu1mbQ3JlN8JVXPdHMvFVqUiw=
 github.com/indigo-web/utils v0.4.0/go.mod h1:fBdCfyNyprkgC0FvqaLE1B43CZgByQyhjDRxz4pNt8U=
+github.com/indigo-web/utils v0.6.0 h1:rmVWFkCLMiw9sCBAvBdxTHtPCm54tOsCf+hmvuY9zxQ=
+github.com/indigo-web/utils v0.6.0/go.mod h1:Q+voOJjIRN7DV+ifWozy6RY6cDF10Ev0NPDjsuOAXfQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
