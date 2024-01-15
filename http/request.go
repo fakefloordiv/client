@@ -5,7 +5,6 @@ import (
 	"github.com/indigo-web/client/http/method"
 	"github.com/indigo-web/client/http/proto"
 	"github.com/indigo-web/utils/uf"
-	"io"
 	"os"
 )
 
@@ -14,61 +13,56 @@ type session interface {
 }
 
 type Request struct {
-	Method  method.Method
-	Path    string
-	Proto   proto.Protocol
-	Headers headers.Headers
-	File    *os.File
-	Body    []byte
+	method  method.Method
+	path    string
+	proto   proto.Protocol
+	headers headers.Headers
+	file    *os.File
+	body    []byte
 	err     error
 }
 
 func NewRequest(hdrs headers.Headers) *Request {
 	return &Request{
-		Proto:   proto.Auto,
-		Headers: hdrs,
+		proto:   proto.Auto,
+		headers: hdrs,
 	}
 }
 
-func (r *Request) WithMethod(m method.Method) *Request {
-	r.Method = m
+func (r *Request) Method(m method.Method) *Request {
+	r.method = m
 	return r
 }
 
-func (r *Request) WithPath(path string) *Request {
-	r.Path = path
+func (r *Request) Path(path string) *Request {
+	r.path = path
 	return r
 }
 
-func (r *Request) WithProtocol(proto proto.Protocol) *Request {
-	r.Proto = proto
+func (r *Request) Proto(proto proto.Protocol) *Request {
+	r.proto = proto
 	return r
 }
 
-func (r *Request) WithHeader(key string, values ...string) *Request {
+func (r *Request) Header(key string, values ...string) *Request {
 	for _, value := range values {
-		r.Headers.Add(key, value)
+		r.headers.Add(key, value)
 	}
 	return r
 }
 
 // WithFile opens a new file with os.O_RDONLY flag and perm=0
-func (r *Request) WithFile(filename string) *Request {
-	r.File, r.err = os.OpenFile(filename, os.O_RDONLY, 0)
+func (r *Request) File(filename string) *Request {
+	r.file, r.err = os.OpenFile(filename, os.O_RDONLY, 0)
 	return r
 }
 
-func (r *Request) WithBody(body string) *Request {
-	return r.WithBodyBytes(uf.S2B(body))
+func (r *Request) String(body string) *Request {
+	return r.Bytes(uf.S2B(body))
 }
 
-func (r *Request) WithBodyBytes(body []byte) *Request {
-	r.Body = body
-	return r
-}
-
-func (r *Request) WithBodyFrom(reader io.Reader) *Request {
-	r.Body, r.err = io.ReadAll(reader)
+func (r *Request) Bytes(body []byte) *Request {
+	r.body = body
 	return r
 }
 
@@ -84,12 +78,12 @@ func (r *Request) Send(session session) (*Response, error) {
 }
 
 func (r *Request) Clear() *Request {
-	r.Method = method.Unknown
-	r.Path = ""
-	r.Proto = proto.Auto
-	r.Headers.Clear()
-	r.File = nil
-	r.Body = nil
+	r.method = method.Unknown
+	r.path = ""
+	r.proto = proto.Auto
+	r.headers.Clear()
+	r.file = nil
+	r.body = nil
 	r.err = nil
 	return r
 }
